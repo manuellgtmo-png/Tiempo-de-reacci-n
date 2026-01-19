@@ -8,20 +8,23 @@
         :root { --bg: #0f172a; --accent: #38bdf8; --card: #1e293b; --error: #ef4444; }
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
         
+        /* Pantallas de interfaz */
         #setup-screen, #instruction-screen, #msg-screen { position: fixed; inset: 0; background: var(--bg); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
         .input-clinico { padding: 14px; font-size: 1.1rem; border-radius: 10px; border: 2px solid var(--accent); background: var(--card); color: white; margin: 10px; width: 300px; outline: none; }
         .config-box { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid #334155; margin-top: 15px; width: 300px; }
         .slider { width: 100%; cursor: pointer; accent-color: var(--accent); }
         .btn-grande { background: var(--accent); color: #0f172a; padding: 15px 40px; border-radius: 12px; font-size: 1.4rem; font-weight: bold; cursor: pointer; border: none; margin-top: 20px; }
         
+        /* Cabecera de estadísticas */
         .header-clinico { width: 100%; background: rgba(30, 41, 59, 0.9); padding: 15px; border-bottom: 2px solid var(--accent); display: flex; justify-content: space-around; font-size: 0.9rem; z-index: 10; box-sizing: border-box; }
         .stat-val { font-size: 1.2rem; font-weight: bold; color: var(--accent); display: block; }
         
-        #game-area { position: relative; width: 100vw; height: calc(100vh - 80px); cursor: crosshair; }
-        #target { position: absolute; width: 85px; height: 85px; border-radius: 50%; display: none; cursor: pointer; transform: translate(-50%, -50%); box-shadow: 0 0 30px rgba(255, 255, 255, 0.2); border: 3px solid white; z-index: 5; }
+        /* Área de juego y objetivo */
+        #game-area { position: absolute; top: 80px; bottom: 0; left: 0; right: 0; z-index: 1; cursor: crosshair; }
+        #target { position: absolute; width: 85px; height: 85px; border-radius: 50%; display: none; cursor: pointer; transform: translate(-50%, -50%); border: 3px solid white; z-index: 5; box-shadow: 0 0 25px rgba(255,255,255,0.3); }
     </style>
 </head>
-<body onmousedown="registrarFalsoPositivo(event)">
+<body>
 
     <div id="setup-screen">
         <h1 style="color:var(--accent); font-size: 2.5rem; margin-bottom: 10px;">TIEMPO DE REACCIÓN</h1>
@@ -39,15 +42,15 @@
         <h2 style="color:var(--accent)">¡Hola! Vamos a empezar</h2>
         <p style="max-width: 450px; line-height: 1.6; font-size: 1.1rem;">
             Tu objetivo es tocar los círculos de colores <br><b>lo más rápido que puedas</b>.<br><br>
-            Cada nivel será más veloz. <br>Si el círculo desaparece antes de tocarlo, <br>la sesión terminará.
+            Cada nivel será más veloz. <br>Si tocas fuera del círculo, contará como <br><span style="color:var(--error)">fallo de precisión</span>.
         </p>
         <button class="btn-grande" onclick="comenzarJuego()">¡Estoy Listo!</button>
     </div>
 
     <div id="msg-screen" style="display:none">
-        <h1 id="msg-titulo" style="color:var(--accent)">¡Buen trabajo!</h1>
+        <h1 style="color:var(--accent)">¡Buen trabajo!</h1>
         <p id="msg-subtitulo" style="font-size: 1.2rem; line-height: 1.8; white-space: pre-wrap;"></p>
-        <button class="btn-grande" onclick="location.reload()">Reiniciar Sesión</button>
+        <button class="btn-grande" onclick="location.reload()">Cerrar y Reiniciar</button>
     </div>
 
     <div class="header-clinico">
@@ -57,7 +60,7 @@
         <div><span>Promedio</span><span id="val-avg" class="stat-val">0</span><small>ms</small></div>
     </div>
 
-    <div id="game-area">
+    <div id="game-area" onmousedown="registrarFalsoPositivo(event)">
         <div id="target" onmousedown="registrarAcierto(event)"></div>
     </div>
 
@@ -78,10 +81,8 @@
             document.getElementById('instruction-screen').style.display = 'none';
             document.getElementById('val-pac').innerText = paciente;
             juegoIniciado = true;
-            iniciarNivel();
+            lanzarObjetivo();
         }
-
-        function iniciarNivel() { aciertosNivel = 0; lanzarObjetivo(); }
 
         function lanzarObjetivo() {
             estaActivo = false;
@@ -94,8 +95,8 @@
                 const t = document.getElementById('target');
                 t.style.left = x + 'px'; t.style.top = y + 'px';
                 
-                // CÍRCULOS DE COLORES RECUPERADOS
-                t.style.backgroundColor = `hsl(${Math.random()*360}, 70%, 60%)`;
+                // Círculos de colores vibrantes
+                t.style.backgroundColor = `hsl(${Math.random()*360}, 75%, 55%)`;
                 
                 t.style.display = 'block';
                 estaActivo = true;
@@ -105,61 +106,63 @@
         }
 
         function registrarAcierto(e) {
-            e.stopPropagation(); // Evita que cuente como fallo al tocar el círculo
+            e.stopPropagation(); // Evita que cuente como fallo al acertar
             if(!estaActivo) return;
             clearTimeout(gameTimer);
             estaActivo = false;
+            
             times.push(Date.now() - startTime);
-            aciertosNivel++; aciertosTotales++;
+            aciertosNivel++; 
+            aciertosTotales++;
             
             document.getElementById('val-avg').innerText = Math.round(times.reduce((a,b)=>a+b)/times.length);
             document.getElementById('target').style.display = 'none';
             
             if(aciertosNivel >= 5) {
                 nivel++;
+                aciertosNivel = 0;
                 document.getElementById('val-nivel').innerText = nivel;
-                iniciarNivel();
-            } else {
-                lanzarObjetivo();
             }
+            lanzarObjetivo();
         }
 
         function registrarFalsoPositivo(e) {
-            // Si el juego no ha empezado o el clic fue en la cabecera, no hace nada
-            if(!juegoIniciado || e.clientY < 80) return;
+            if(!juegoIniciado || !estaActivo) return;
             
             erroresTotales++;
             document.getElementById('val-err').innerText = erroresTotales;
             
-            // Efecto visual de error
-            document.body.style.backgroundColor = "#2d1a1a";
+            // Efecto visual de error (parpadeo rojo)
+            document.body.style.backgroundColor = "#451a1a";
             setTimeout(() => document.body.style.backgroundColor = "#0f172a", 100);
         }
 
         function finalizarJuego() {
-            juegoIniciado = false; estaActivo = false;
+            juegoIniciado = false; 
+            estaActivo = false;
             clearTimeout(waitTimer);
             const promedio = document.getElementById('val-avg').innerText + " ms";
 
-            // ENVÍO AL EXCEL (Ajustado a tus IDs confirmados)
-            const URL_FORM = "https://docs.google.com/forms/d/e/1FAIpQLScIgP6SFKo8ACneK7EdifzxCyl8haYU7LLIys1NxjIiUklkWA/formResponse";
+            // ENVÍO AL FORMULARIO (IDs actualizados del enlace compartido)
+            const URL_FORM = "https://docs.google.com/forms/d/e/1FAIpQLSfL1u3T8Xqn_pEEhQlnjJmoCu5DOLnQc0ixRLtba8WgLnniyw/formResponse";
             const fd = new FormData();
-            fd.append("entry.1971645483", paciente);
-            fd.append("entry.1310127986", "Reaccion");
-            fd.append("entry.1881234158", nivel);
-            fd.append("entry.2029359389", aciertosTotales);
-            fd.append("entry.2036354186", erroresTotales);
-            fd.append("entry.934609722", promedio);
-            fd.append("entry.143370750", new Date().toLocaleDateString());
+            fd.append("entry.565202054", paciente);
+            fd.append("entry.276239328", "Tiempo visual de reacción");
+            fd.append("entry.1249753698", nivel);
+            fd.append("entry.1274341825", aciertosTotales);
+            fd.append("entry.841722728", erroresTotales);
+            fd.append("entry.2073150314", promedio);
+            fd.append("entry.1165087160", new Date().toISOString().split('T')[0]);
 
             fetch(URL_FORM, { method: "POST", mode: "no-cors", body: fd });
 
-            // Mostrar resultados
-            document.getElementById('msg-subtitulo').innerText = `Paciente: ${paciente}\nNivel Alcanzado: ${nivel}\nAciertos Totales: ${aciertosTotales}\nFalsos Positivos: ${erroresTotales}\nReacción Promedio: ${promedio}`;
+            // Pantalla final
+            document.getElementById('msg-subtitulo').innerText = `Paciente: ${paciente}\nNivel Alcanzado: ${nivel}\nFallos de Precisión: ${erroresTotales}\nReacción Promedio: ${promedio}`;
             document.getElementById('msg-screen').style.display = 'flex';
         }
     </script>
 </body>
 </html>
+
 
 
