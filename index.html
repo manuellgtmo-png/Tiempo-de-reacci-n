@@ -3,185 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terapia Visual - Reacción Pro (5 Intentos)</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Tiempo de Reacción - Terapia Visual</title>
     <style>
-        :root { --bg: #0f172a; --card: #1e293b; --accent: #f59e0b; --text: #f8fafc; }
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        #login-screen { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .input-clinico { padding: 15px; font-size: 1.2rem; border-radius: 10px; border: 2px solid var(--accent); background: #1e293b; color: white; margin-bottom: 20px; text-align: center; width: 280px; }
-        .controles-modo { margin: 20px; display: flex; gap: 10px; }
-        .btn-modo { padding: 8px 15px; border-radius: 8px; border: 1px solid white; background: transparent; color: white; cursor: pointer; }
-        .btn-modo.active { background: white; color: var(--bg); }
-        #game-area { width: 300px; height: 300px; border-radius: 50%; margin: 20px auto; cursor: pointer; display: flex; align-items: center; justify-content: center; position: relative; border: 4px solid #334155; transition: 0.1s; background: #334155; }
-        #admin-panel { display: none; position: fixed; inset: 0; background: #f1f5f9; color: #1e293b; z-index: 2000; padding: 30px; overflow-y: auto; }
-        .btn-admin { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); border: 1px solid white; color: white; padding: 5px 10px; cursor: pointer; font-size: 0.8rem; }
-        #game-ui { display: none; text-align: center; width: 100%; }
-        .stats-bar { font-size: 1.1rem; margin-bottom: 10px; color: var(--accent); }
-        .btn-accion { background: var(--accent); color: white; border: none; padding: 15px 30px; border-radius: 12px; cursor: pointer; font-weight: bold; }
+        :root {
+            --bg: #0f172a;
+            --accent: #38bdf8;
+        }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
+        
+        /* Pantalla de Inicio e Instrucciones */
+        #setup-screen, #instruction-screen {
+            position: fixed; inset: 0; background: var(--bg); z-index: 100;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center;
+        }
+        .input-clinico { padding: 12px; font-size: 1rem; border-radius: 8px; border: 2px solid var(--accent); background: #1e293b; color: white; margin: 10px; width: 280px; }
+        .btn-grande { background: var(--accent); color: #0f172a; padding: 15px 35px; border-radius: 12px; font-size: 1.5rem; font-weight: bold; cursor: pointer; border: none; margin-top: 20px; }
+
+        /* Área de Juego */
+        .header { padding: 10px; border-bottom: 1px solid #334155; width: 100%; text-align: center; }
+        #game-canvas { position: relative; width: 100vw; height: calc(100vh - 80px); cursor: crosshair; }
+        
+        .target {
+            position: absolute; width: 80px; height: 80px; border-radius: 50%;
+            display: none; cursor: pointer; transform: translate(-50%, -50%);
+            box-shadow: 0 0 20px rgba(255,255,255,0.3);
+        }
     </style>
 </head>
 <body>
 
-    <button class="btn-admin" onclick="abrirAdmin()">Área Profesional</button>
-
-    <div id="login-screen">
-        <h2 style="color: var(--accent);">Registro de Paciente</h2>
-        <p>Tiempo de Reacción Visual</p>
-        <input type="text" id="nombrePaciente" class="input-clinico" placeholder="Nombre completo">
-        <button class="btn-accion" onclick="iniciar()">Empezar Terapia</button>
+    <div id="setup-screen">
+        <h1 style="color:var(--accent)">Tiempo de Reacción</h1>
+        <input type="text" id="nombrePaciente" class="input-clinico" placeholder="Nombre del Paciente">
+        <button class="btn-grande" onclick="irAInstrucciones()">Siguiente</button>
     </div>
 
-    <div id="game-ui">
-        <div class="controles-modo">
-            <button class="btn-modo active" onclick="setModo('std', this)">Rojo/Verde</button>
-            <button class="btn-modo" onclick="setModo('disc', this)">Azul/Amarillo</button>
-            <button class="btn-modo" onclick="setModo('bw', this)">Blanco/Negro</button>
-        </div>
-        <div class="stats-bar">Intento: <span id="intento-num">0</span>/5 | Promedio: <span id="prom-actual">0</span> ms</div>
-        <h1 id="resultado-ms">0 ms</h1>
-        <p id="mensaje">Toca el círculo para iniciar</p>
-        <div id="game-area" onclick="handleClick()">
-            <span id="label-area" style="font-weight:bold; pointer-events:none;">INICIAR</span>
-        </div>
+    <div id="instruction-screen" style="display:none">
+        <h2 style="color:var(--accent)">¿Cómo jugar?</h2>
+        <p style="max-width: 450px; line-height: 1.6; font-size: 1.1rem;">
+            Aparecerán círculos de colores en diferentes partes de la pantalla.<br><br>
+            Tu objetivo es <b>tocarlos lo más rápido posible</b> en cuanto los veas.<br><br>
+            ¡Mucha atención!
+        </p>
+        <button class="btn-grande" onclick="comenzarJuego()">¡Empezar!</button>
     </div>
 
-    <div id="admin-panel">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h2>Historial Clínico - Tiempo de Reacción</h2>
-            <button onclick="cerrarAdmin()" style="padding:10px; background:#ef4444; color:white; border:none; border-radius:5px;">Cerrar</button>
-        </div>
-        <canvas id="graficoReaccion" style="max-height: 300px; margin-top:20px;"></canvas>
-        <table width="100%" border="1" style="margin-top:20px; border-collapse: collapse; background: white;">
-            <thead><tr style="background:#f59e0b; color:white;"><th>Fecha</th><th>Paciente</th><th>Promedio (ms)</th></tr></thead>
-            <tbody id="tablaBody"></tbody>
-        </table>
+    <div class="header">
+        <span>Paciente: <b id="val-pac">---</b></span> | 
+        <span>Último tiempo: <b id="val-time">0</b> ms</span> | 
+        <span>Promedio: <b id="val-avg">0</b> ms</span>
+    </div>
+
+    <div id="game-canvas" onclick="registrarFallo()">
+        <div id="target" class="target" onmousedown="acierto(event)"></div>
     </div>
 
     <script>
-        let paciente = "", state = "IDLE", modo = "std", intentos = [], startTime, timeoutId;
-        const area = document.getElementById('game-area');
-        const msg = document.getElementById('mensaje');
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
-        // IDs ACTUALIZADOS SEGÚN TU LINK PRELLENADO
-        const formURL = "https://docs.google.com/forms/d/e/1FAIpQLSfL1u3T8Xqn_pEEhQlnjJmoCu5DOLnQc0ixRLtba8WgLnniyw/formResponse";
-        const entryNombre = "entry.565202054";
-        const entryPromedio = "entry.276239328";
+        let paciente = "";
+        let startTime, times = [];
+        const target = document.getElementById('target');
 
-        const colores = {
-            std: { espera: "#ef4444", go: "#22c55e" },
-            disc: { espera: "#3b82f6", go: "#eab308" },
-            bw: { espera: "#000000", go: "#ffffff" }
-        };
-
-        function playClick() {
-            try {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.frequency.value = 800; gain.gain.value = 0.1;
-                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
-            } catch(e) {}
-        }
-
-        function iniciar() {
+        function irAInstrucciones() {
             paciente = document.getElementById('nombrePaciente').value.trim();
-            if(paciente.length < 3) return alert("Nombre requerido");
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('game-ui').style.display = 'block';
-            if (audioCtx.state === 'suspended') audioCtx.resume();
+            if(!paciente) return alert("Por favor, ingrese el nombre");
+            document.getElementById('setup-screen').style.display = 'none';
+            document.getElementById('instruction-screen').style.display = 'flex';
         }
 
-        function setModo(m, btn) {
-            modo = m;
-            document.querySelectorAll('.btn-modo').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            resetTest();
+        function comenzarJuego() {
+            document.getElementById('instruction-screen').style.display = 'none';
+            document.getElementById('val-pac').innerText = paciente;
+            aparecer();
         }
 
-        function handleClick() {
-            if (state === "IDLE") startWaiting();
-            else if (state === "WAITING") penalizar();
-            else if (state === "GO") registrarIntento(Date.now() - startTime);
-        }
-
-        function startWaiting() {
-            state = "WAITING";
-            area.style.backgroundColor = colores[modo].espera;
-            document.getElementById('label-area').innerText = "";
-            msg.innerText = "¡Espera al cambio!";
-            const delay = Math.random() * 3000 + 2000;
-            timeoutId = setTimeout(() => {
-                state = "GO";
-                area.style.backgroundColor = colores[modo].go;
-                playClick();
-                startTime = Date.now();
-            }, delay);
-        }
-
-        function penalizar() {
-            clearTimeout(timeoutId);
-            state = "IDLE";
-            area.style.backgroundColor = "#334155";
-            document.getElementById('label-area').innerText = "ERROR";
-            msg.innerText = "¡Demasiado pronto! Reintenta.";
-            setTimeout(resetTest, 1000);
-        }
-
-        function registrarIntento(ms) {
-            state = "IDLE";
-            intentos.push(ms);
-            document.getElementById('resultado-ms').innerText = ms + " ms";
-            document.getElementById('intento-num').innerText = intentos.length;
+        function aparecer() {
+            const x = Math.random() * (window.innerWidth - 100) + 50;
+            const y = Math.random() * (window.innerHeight - 180) + 50;
+            const color = `hsl(${Math.random() * 360}, 70%, 60%)`;
             
-            let suma = intentos.reduce((a, b) => a + b, 0);
-            let promedio = Math.round(suma / intentos.length);
-            document.getElementById('prom-actual').innerText = promedio;
-
-            if (intentos.length === 5) {
-                msg.innerText = "¡Sesión completada!";
-                enviarResultados(promedio);
-                intentos = [];
-                document.getElementById('label-area').innerText = "FIN";
-            } else {
-                area.style.backgroundColor = "#334155";
-                document.getElementById('label-area').innerText = "SIGUIENTE";
-                msg.innerText = "Toca el círculo para el próximo intento.";
-            }
+            target.style.left = x + "px";
+            target.style.top = y + "px";
+            target.style.backgroundColor = color;
+            
+            setTimeout(() => {
+                target.style.display = "block";
+                startTime = Date.now();
+            }, Math.random() * 2000 + 500);
         }
 
-        function enviarResultados(prom) {
-            let h = JSON.parse(localStorage.getItem('h_reaccion_pro') || "[]");
-            h.push({ nombre: paciente, fecha: new Date().toLocaleDateString(), prom: prom });
-            localStorage.setItem('h_reaccion_pro', JSON.stringify(h));
-
-            const fd = new FormData();
-            fd.append(entryNombre, paciente); 
-            fd.append(entryPromedio, prom);    
-            fetch(formURL, { method: "POST", mode: "no-cors", body: fd })
-                .then(() => {
-                    alert("¡Éxito! Promedio de " + prom + " ms guardado en tu nube.");
-                })
-                .catch(() => alert("Error al enviar. Revisa tu conexión."));
+        function acierto(e) {
+            e.stopPropagation();
+            const reactionTime = Date.now() - startTime;
+            times.push(reactionTime);
+            target.style.display = "none";
+            
+            document.getElementById('val-time').innerText = reactionTime;
+            const avg = Math.round(times.reduce((a, b) => a + b) / times.length);
+            document.getElementById('val-avg').innerText = avg;
+            
+            aparecer();
         }
 
-        function resetTest() {
-            state = "IDLE";
-            area.style.backgroundColor = "#334155";
-            document.getElementById('label-area').innerText = "INICIAR";
-            msg.innerText = "Toca el círculo";
+        function registrarFallo() {
+            // Opcional: penalizar o vibrar si toca fuera
         }
-
-        function abrirAdmin() {
-            if(prompt("Clave Profesional:") === "1234") {
-                document.getElementById('admin-panel').style.display = 'block';
-                const h = JSON.parse(localStorage.getItem('h_reaccion_pro') || "[]");
-                document.getElementById('tablaBody').innerHTML = h.reverse().map(d => `<tr><td>${d.fecha}</td><td>${d.nombre}</td><td>${d.prom} ms</td></tr>`).join('');
-            }
-        }
-        function cerrarAdmin() { document.getElementById('admin-panel').style.display = 'none'; }
     </script>
 </body>
 </html>
-
