@@ -2,84 +2,112 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tiempo de Reacción PRO - Clínica Visual</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tiempo de Reacción PRO - Adaptable</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&display=swap" rel="stylesheet">
     <style>
         :root { 
             --bg: #0f172a; --primary: #f8fafc; --pink: #ff2e63; 
             --blue: #38bdf8; --card: #1e293b; --success: #10b981; --yellow: #facc15;
         }
-        body { margin: 0; font-family: 'Montserrat'; background: var(--bg); color: var(--primary); overflow: hidden; height: 100vh; }
         
-        .header { height: 80px; background: #1e293b; display: flex; justify-content: space-around; align-items: center; border-bottom: 4px solid var(--pink); }
-        .stat { text-align: center; }
-        .stat b { display: block; color: var(--blue); font-size: 0.7rem; text-transform: uppercase; }
-        .stat span { font-size: 1.5rem; font-weight: 900; }
+        /* Ajuste para evitar scroll y saltos en móvil */
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            font-family: 'Montserrat'; background: var(--bg); color: var(--primary); 
+            overflow: hidden; display: flex; flex-direction: column;
+            touch-action: none; /* Evita zoom accidental */
+        }
 
-        #game-area { height: calc(100vh - 80px); position: relative; cursor: crosshair; overflow: hidden; }
+        .header { 
+            height: 80px; min-height: 80px; background: #1e293b; 
+            display: flex; justify-content: space-around; align-items: center; 
+            border-bottom: 4px solid var(--pink); z-index: 100;
+        }
+        .stat { text-align: center; }
+        .stat b { display: block; color: var(--blue); font-size: 0.65rem; text-transform: uppercase; }
+        .stat span { font-size: 1.2rem; font-weight: 900; }
+
+        #game-area { 
+            flex-grow: 1; position: relative; cursor: crosshair; overflow: hidden; 
+            width: 100%; height: 100%;
+        }
         
         #target { 
-            position: absolute; border-radius: 50%; background: radial-gradient(circle, #2dd4bf, #0d9488);
-            box-shadow: 0 0 30px rgba(45, 212, 191, 0.6); border: 3px solid white;
-            display: none; transition: transform 0.1s;
+            position: absolute; border-radius: 50%; 
+            background: radial-gradient(circle, #2dd4bf, #0d9488);
+            box-shadow: 0 0 30px rgba(45, 212, 191, 0.6); 
+            border: 3px solid white; display: none; 
+            z-index: 50;
+            /* Toque más fácil en móvil */
+            box-sizing: border-box;
         }
-        #target:active { transform: scale(0.9); }
 
-        .overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.98); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .card { background: #1e293b; border-radius: 40px; padding: 40px; width: 100%; max-width: 450px; text-align: center; border: 1px solid #334155; }
+        /* MODALES RESPONSIVOS */
+        .overlay { 
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.98); 
+            z-index: 2000; display: flex; align-items: center; justify-content: center; 
+            padding: 20px; 
+        }
+        .card { 
+            background: #1e293b; border-radius: 30px; padding: 30px; 
+            width: 90%; max-width: 400px; text-align: center; 
+            border: 1px solid #334155; max-height: 90vh; overflow-y: auto;
+        }
         
-        .habilidades { text-align: left; background: #334155; padding: 20px; border-radius: 20px; margin: 20px 0; border-left: 5px solid var(--blue); }
-        .habilidades h4 { margin: 0 0 5px 0; color: var(--blue); font-size: 0.85rem; }
-        .habilidades p { margin: 0; font-size: 0.85rem; color: #cbd5e1; }
+        .btn { 
+            background: var(--pink); color: white; padding: 18px; 
+            border-radius: 20px; font-weight: 900; border: none; 
+            cursor: pointer; width: 100%; font-size: 1.1rem; 
+            text-transform: uppercase; box-shadow: 0 6px 0 #9f1239; 
+            margin-top: 15px;
+        }
+        .btn:active { transform: translateY(3px); box-shadow: 0 3px 0 #9f1239; }
 
-        .btn { background: var(--pink); color: white; padding: 20px; border-radius: 22px; font-weight: 900; border: none; cursor: pointer; width: 100%; font-size: 1.2rem; text-transform: uppercase; box-shadow: 0 8px 0 #9f1239; }
-        .btn-next { background: var(--success); box-shadow: 0 8px 0 #065f46; }
-
-        #click-effect { position: absolute; border: 2px solid var(--pink); border-radius: 50%; pointer-events: none; animation: ripple 0.4s ease-out; }
-        @keyframes ripple { from { width: 0; height: 0; opacity: 1; } to { width: 100px; height: 100px; opacity: 0; } }
+        .habilidades { 
+            text-align: left; background: #334155; padding: 15px; 
+            border-radius: 15px; margin: 15px 0; border-left: 5px solid var(--blue); 
+            font-size: 0.85rem;
+        }
     </style>
 </head>
-<body>
+<body onclick="falloClickFuera(event)">
 
 <div id="screen-start" class="overlay">
     <div class="card">
-        <h1 style="color:var(--blue); margin:0; font-size: 2.5rem;">¡HOLA! ⚡</h1>
-        <h2 id="saludo-paciente" style="margin-top:0; color:white;">Tiempo de Reacción</h2>
+        <h1 style="color:var(--blue); margin:0;">¡HOLA! ⚡</h1>
+        <h2 id="saludo-paciente" style="margin: 10px 0; color:white; font-size: 1.2rem;"></h2>
         <div class="habilidades">
-            <h4>🎯 OBJETIVOS DE HOY:</h4>
-            <p>• Agilizar la respuesta motora visual.<br>• Entrenar la visión periférica.<br>• Mejorar la coordinación ojo-mano.</p>
+            <h4>🎯 OBJETIVOS:</h4>
+            <p>• Agilidad motora visual.<br>• Visión periférica.<br>• Coordinación ojo-mano.</p>
         </div>
-        <button class="btn" onclick="mostrarInstruccion()">¡ESTOY LISTO!</button>
+        <button class="btn" onclick="mostrarInstruccion()">¡EMPEZAR!</button>
     </div>
 </div>
 
 <div id="screen-instruccion" class="overlay" style="display:none">
     <div class="card">
         <h2 style="color:var(--yellow);">¿CÓMO JUGAR?</h2>
-        <div style="text-align: left; color: #cbd5e1; font-size: 0.95rem; line-height: 1.6;">
-            <p>1. Toca el círculo lo <b>más rápido posible</b>.</p>
-            <p>2. ¡Cuidado! Si no lo tocas a tiempo o fallas, pierdes una vida.</p>
-            <p style="color: var(--pink);">❤️ Tienes 2 vidas. Cada 6 niveles recibes una extra.</p>
-        </div>
-        <button class="btn" onclick="iniciarJuego()" style="margin-top:20px; background: var(--success); box-shadow: 0 8px 0 #065f46;">¡ENTENDIDO!</button>
+        <p style="font-size: 0.9rem; color: #cbd5e1;">Toca el círculo lo <b>más rápido posible</b> antes de que desaparezca.</p>
+        <p style="color: var(--pink); font-weight: 700;">❤️ Tienes 2 vidas.</p>
+        <button class="btn" onclick="iniciarJuego()" style="background: var(--success); box-shadow: 0 6px 0 #065f46;">¡ENTENDIDO!</button>
     </div>
 </div>
 
 <div id="screen-next" class="overlay" style="display:none">
     <div class="card">
-        <h1 style="color:var(--success)">¡MUY RÁPIDO! 🚀</h1>
+        <h1 style="color:var(--success)">¡BIEN! 🚀</h1>
         <p id="msg-stats-nivel" style="font-size: 1.2rem; color: white;"></p>
-        <button class="btn btn-next" onclick="proximoNivel()">CONTINUAR</button>
+        <button class="btn" onclick="proximoNivel()" style="background: var(--success); box-shadow: 0 6px 0 #065f46;">SIGUIENTE NIVEL</button>
     </div>
 </div>
 
 <div id="screen-end" class="overlay" style="display:none">
     <div class="card">
-        <h1 style="color:var(--pink)">SESIÓN TERMINADA</h1>
+        <h1 style="color:var(--pink)">SESIÓN FIN</h1>
         <p id="resumen-final" style="font-size: 1.1rem; color: white;"></p>
-        <div id="envio-status" style="margin:20px 0; font-weight:900; color:var(--blue);">🚀 SINCRONIZANDO EXCEL...</div>
-        <button class="btn" onclick="location.href='index.html'" style="background:#475569; box-shadow: 0 8px 0 #1e293b;">SALIR</button>
+        <div id="envio-status" style="margin:20px 0; font-weight:900; color:var(--blue);">🚀 ENVIANDO DATOS...</div>
+        <button class="btn" onclick="location.reload()" style="background:#475569; box-shadow: 0 6px 0 #1e293b;">REPETIR</button>
     </div>
 </div>
 
@@ -87,28 +115,33 @@
     <div class="stat"><b>Nivel</b><span id="txt-nivel">1</span></div>
     <div class="stat"><b>Aciertos</b><span id="txt-ok">0</span></div>
     <div class="stat"><b>Vidas</b><span id="txt-vidas" style="color:var(--pink)">2</span></div>
-    <div class="stat"><b>Reacción</b><span id="txt-ms">0ms</span></div>
+    <div class="stat"><b>MS</b><span id="txt-ms">0ms</span></div>
 </div>
 
-<div id="game-area" onclick="falloClickFuera(event)">
+<div id="game-area">
     <div id="target" onclick="tocarTarget(event)"></div>
 </div>
 
 <iframe name="target_frame" style="display:none;"></iframe>
 
 <script>
-    // --- INTEGRACIÓN PANEL Y SONIDO ---
     const paciente = localStorage.getItem('paciente') || "Paciente";
     const profesional = localStorage.getItem('profesional') || "Especialista";
     document.getElementById('saludo-paciente').innerText = "¡Hola, " + paciente + "!";
 
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function sonar(f, d, t='sine') {
+    // Audio mejorado para compatibilidad móvil
+    let audioCtx;
+    function initAudio() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function sonar(f, d, t='sine') {
+        if (!audioCtx) return;
         const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
         o.type = t; o.frequency.setValueAtTime(f, audioCtx.currentTime);
         g.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + d);
+        g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + d);
         o.connect(g); g.connect(audioCtx.destination);
         o.start(); o.stop(audioCtx.currentTime + d);
     }
@@ -118,6 +151,7 @@
     let gameActive = false, timerTarget;
 
     function mostrarInstruccion() {
+        initAudio();
         document.getElementById('screen-start').style.display = 'none';
         document.getElementById('screen-instruccion').style.display = 'flex';
     }
@@ -132,107 +166,136 @@
         if (!gameActive) return;
         const target = document.getElementById('target');
         const area = document.getElementById('game-area');
+        const rect = area.getBoundingClientRect();
         
-        let size = Math.max(45, 100 - (nivel * 3));
-        let maxWait = Math.max(700, 2500 - (nivel * 150));
+        // CÁLCULO DINÁMICO: Nunca menor a 40px para que el dedo lo capte
+        let size = Math.max(45, 90 - (nivel * 2.5)); 
+        
+        // MARGEN DE SEGURIDAD (Padding) para que no toque los bordes del móvil
+        const padding = 20;
+        const maxX = rect.width - size - padding;
+        const maxY = rect.height - size - padding;
 
-        const x = Math.random() * (area.clientWidth - size);
-        const y = Math.random() * (area.clientHeight - size);
+        const x = Math.random() * (maxX - padding) + padding;
+        const y = Math.random() * (maxY - padding) + padding;
 
-        target.style.width = size + "px"; target.style.height = size + "px";
-        target.style.left = x + "px"; target.style.top = y + "px";
+        target.style.width = size + "px"; 
+        target.style.height = size + "px";
+        target.style.left = x + "px"; 
+        target.style.top = y + "px";
         target.style.display = "block";
+        
         spawnTime = Date.now();
+
+        // Tiempo de espera dinámico
+        let maxWait = Math.max(650, 2400 - (nivel * 130));
 
         clearTimeout(timerTarget);
         timerTarget = setTimeout(() => {
-            if (target.style.display === "block") perderVida();
+            if (target.style.display === "block" && gameActive) perderVida();
         }, maxWait);
     }
 
     function tocarTarget(e) {
         e.stopPropagation();
-        sonar(800, 0.1); // Sonido de acierto
+        if (!gameActive) return;
+        
+        sonar(800, 0.1);
         const reaction = Date.now() - spawnTime;
         reactionTimes.push(reaction);
+        
         document.getElementById('txt-ms').innerText = reaction + "ms";
         document.getElementById('target').style.display = "none";
         aciertos++;
         document.getElementById('txt-ok').innerText = aciertos;
 
+        clearTimeout(timerTarget);
+
         if (aciertos % 10 === 0) {
             gameActive = false;
-            document.getElementById('msg-stats-nivel').innerText = `Tu promedio: ${calcularPromedio()}ms`;
+            document.getElementById('msg-stats-nivel').innerText = `Promedio: ${calcularPromedio()}ms`;
             document.getElementById('screen-next').style.display = 'flex';
         } else {
-            setTimeout(aparecerTarget, Math.random() * 800 + 400);
+            setTimeout(aparecerTarget, Math.random() * 500 + 300);
         }
     }
 
     function falloClickFuera(e) {
-        if (!gameActive) return;
+        // Solo falla si el clic es dentro del área de juego y no en un modal
+        if (!gameActive || e.target.closest('.card')) return;
         perderVida();
     }
 
     function perderVida() {
-        sonar(200, 0.3, 'sawtooth'); // Sonido de fallo
+        sonar(150, 0.4, 'sawtooth');
         vidas--; fallos++;
         document.getElementById('txt-vidas').innerText = vidas;
         document.getElementById('target').style.display = "none";
-        if (vidas <= 0) finalizarSesion();
-        else setTimeout(aparecerTarget, 1200);
+        
+        if (vidas <= 0) {
+            finalizarSesion();
+        } else {
+            gameActive = false; // Pausa breve
+            setTimeout(() => {
+                if (vidas > 0) {
+                    gameActive = true;
+                    aparecerTarget();
+                }
+            }, 1000);
+        }
     }
 
     function proximoNivel() {
         nivel++;
-        if (nivel % 6 === 0) vidas++;
+        if (nivel % 6 === 0) {
+            vidas++;
+            sonar(1000, 0.5);
+        }
         document.getElementById('txt-nivel').innerText = nivel;
         document.getElementById('txt-vidas').innerText = vidas;
         document.getElementById('screen-next').style.display = 'none';
-        gameActive = true; aparecerTarget();
+        gameActive = true; 
+        aparecerTarget();
     }
 
     function calcularPromedio() {
         if (reactionTimes.length === 0) return 0;
-        return (reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length).toFixed(0);
+        const suma = reactionTimes.reduce((a, b) => a + b, 0);
+        return (suma / reactionTimes.length).toFixed(0);
     }
 
     function finalizarSesion() {
         gameActive = false;
+        clearTimeout(timerTarget);
         const prom = calcularPromedio();
-        document.getElementById('resumen-final').innerText = `Nivel: ${nivel} | Reacción Media: ${prom}ms`;
+        document.getElementById('resumen-final').innerText = `Nivel: ${nivel} | Media: ${prom}ms`;
         document.getElementById('screen-end').style.display = 'flex';
         enviarExcel(prom);
     }
 
     function enviarExcel(promedio) {
-        const form = document.createElement("form");
-        form.method = "POST";
-        form.action = "https://docs.google.com/forms/d/e/1FAIpQLSeLlcvlhrTSHDhvxctLghiM3caGsgBL2wdaT7nBxrz6UARwYg/formResponse";
-        form.target = "target_frame";
-        const datos = {
-            "entry.369874016": paciente,
-            "entry.1353470174": "Tiempo de Reacción (" + profesional + ")",
-            "entry.721051298": nivel,
-            "entry.873272199": aciertos,
-            "entry.1030094511": fallos,
-            "entry.1303309812": promedio + "ms",
-            "entry.845098414": new Date().toISOString().split('T')[0]
-        };
-        for (let key in datos) {
-            let input = document.createElement("input");
-            input.type = "hidden"; input.name = key; input.value = datos[key];
-            form.appendChild(input);
-        }
-        document.body.appendChild(form); form.submit();
-        setTimeout(() => {
-            document.getElementById('envio-status').innerText = "✅ REGISTRADO EN EXCEL";
+        const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeLlcvlhrTSHDhvxctLghiM3caGsgBL2wdaT7nBxrz6UARwYg/formResponse";
+        const fd = new URLSearchParams();
+        fd.append("entry.369874016", paciente);
+        fd.append("entry.1353470174", "Tiempo Reacción (" + profesional + ")");
+        fd.append("entry.721051298", nivel);
+        fd.append("entry.873272199", aciertos);
+        fd.append("entry.1030094511", fallos);
+        fd.append("entry.1303309812", promedio + "ms");
+        fd.append("entry.845098414", new Date().toISOString().split('T')[0]);
+
+        fetch(FORM_URL, { method: "POST", mode: "no-cors", body: fd })
+        .then(() => {
+            document.getElementById('envio-status').innerText = "✅ DATOS GUARDADOS";
             document.getElementById('envio-status').style.color = "#10b981";
-        }, 2000);
+        }).catch(() => {
+            document.getElementById('envio-status').innerText = "❌ ERROR AL GUARDAR";
+        });
     }
 </script>
 </body>
 </html>
+
 
 
 
